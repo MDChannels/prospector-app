@@ -574,6 +574,40 @@
   .toast.green { border-color: var(--green); color: var(--green); }
   .toast.red { border-color: var(--red); color: var(--red); }
 
+  /* ── AUTOCOMPLETE ── */
+  .pac-container {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    margin-top: 4px;
+    z-index: 9999 !important;
+  }
+  .pac-item {
+    padding: 8px 12px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .pac-item:hover, .pac-item-selected {
+    background: var(--accent-glow);
+    color: var(--text);
+  }
+  .pac-item-query { color: var(--text); font-weight: 600; }
+  .pac-icon { display: none; }
+  .pac-matched { color: var(--accent-light); }
+  .city-wrap { position: relative; }
+  .city-ok {
+    position: absolute;
+    right: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--green);
+    font-size: 14px;
+    display: none;
+  }
+
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -626,7 +660,10 @@
     <div class="sidebar-section">
       <h3>📍 Localização</h3>
       <label>Cidade / Região</label>
-      <input type="text" id="city" placeholder="Ex: Campinas, SP" value="">
+      <div class="city-wrap">
+        <input type="text" id="city" placeholder="Digite sua cidade..." autocomplete="off">
+        <span class="city-ok" id="city-ok">✓</span>
+      </div>
 
       <label>Raio de busca: <span id="radius-label">5 km</span></label>
       <input type="range" id="radius" min="1" max="30" value="5" oninput="updateRadius()">
@@ -793,6 +830,8 @@ const NICHOS = [
 let allLeads = JSON.parse(localStorage.getItem('prospector_leads') || '[]');
 let mapsService = null;
 let mapsGeocoder = null;
+let cityAutocomplete = null;
+let selectedCityLocation = null;
 let searching = false;
 let stopRequested = false;
 let sessionCount = 0;
@@ -914,6 +953,30 @@ function initServices() {
   const map = new google.maps.Map(mapEl, { center: { lat: -14.2, lng: -51.9 }, zoom: 4 });
   mapsService = new google.maps.places.PlacesService(map);
   mapsGeocoder = new google.maps.Geocoder();
+
+  if (!cityAutocomplete) {
+    const cityInput = document.getElementById('city');
+    cityAutocomplete = new google.maps.places.Autocomplete(cityInput, {
+      types: ['(cities)'],
+      componentRestrictions: { country: 'br' },
+      fields: ['geometry', 'name', 'formatted_address'],
+    });
+    cityAutocomplete.addListener('place_changed', () => {
+      const place = cityAutocomplete.getPlace();
+      if (place.geometry && place.geometry.location) {
+        selectedCityLocation = place.geometry.location;
+        document.getElementById('city-ok').style.display = 'block';
+        cityInput.value = place.name || place.formatted_address;
+      } else {
+        selectedCityLocation = null;
+        document.getElementById('city-ok').style.display = 'none';
+      }
+    });
+    cityInput.addEventListener('input', () => {
+      selectedCityLocation = null;
+      document.getElementById('city-ok').style.display = 'none';
+    });
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -1014,10 +1077,15 @@ async function startSearch() {
     initServices();
     log('API carregada com sucesso ✓', 'success');
 
-    // Geocode city
-    log(`Localizando: ${city}...`, 'info');
-    const location = await geocodeCity(city);
-    log(`Coordenadas: ${location.lat().toFixed(4)}, ${location.lng().toFixed(4)} ✓`, 'success');
+    let location;
+    if (selectedCityLocation) {
+      location = selectedCityLocation;
+      log(`Localização: ${city} ✓ (autocomplete)`, 'success');
+    } else {
+      log(`Localizando: ${city}...`, 'info');
+      location = await geocodeCity(city);
+      log(`Coordenadas: ${location.lat().toFixed(4)}, ${location.lng().toFixed(4)} ✓`, 'success');
+    }
 
     let nichosProcessed = 0;
     let leadsAdded = 0;
