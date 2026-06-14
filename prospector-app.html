@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProspectaSite — Encontre Clientes Sem Site</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3250;
+    --accent: #5b6ef5;
+    --accent-light: #7b8bff;
+    --accent-glow: rgba(91,110,245,0.2);
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.15);
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --text-muted: #7c8db0;
+    --text-dim: #4a5578;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 60px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--text);
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .badge {
+    font-size: 11px;
+    background: var(--accent-glow);
+    color: var(--accent-light);
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--accent);
+    font-weight: 600;
+  }
+  .header-stats {
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .stat-val { color: var(--text); font-weight: 600; }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 60px);
+  }
+
+  /* ── SIDEBAR ── */
+  aside {
+    width: 320px;
+    min-width: 320px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-section h3 {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+
+  /* ── FORM ELEMENTS ── */
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"], input[type="password"], select {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    margin-top: 4px;
+  }
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ── API KEY ── */
+  .api-key-wrap {
+    position: relative;
+  }
+  .api-key-wrap input {
+    padding-right: 40px;
+  }
+  .eye-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    padding: 4px;
+  }
+  .api-help {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .api-help a { color: var(--accent-light); text-decoration: none; }
+
+  /* ── NICHOS ── */
+  .nicho-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .nicho-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 9px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: all .15s;
+    user-select: none;
+  }
+  .nicho-item:hover { border-color: var(--accent); color: var(--text); }
+  .nicho-item.active {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent-light);
+    font-weight: 600;
+  }
+  .nicho-item input[type="checkbox"] { display: none; }
+  .nicho-icon { font-size: 14px; }
+
+  .select-all-btn {
+    font-size: 12px;
+    color: var(--accent-light);
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 0;
+  }
+
+  /* ── SEARCH BUTTON ── */
+  .btn-search {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .btn-search:hover { background: var(--accent-light); transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+  .btn-search:disabled { background: var(--text-dim); cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-stop {
+    width: 100%;
+    padding: 13px;
+    background: transparent;
+    color: var(--red);
+    border: 1px solid var(--red);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    display: none;
+  }
+  .btn-stop:hover { background: rgba(239,68,68,.1); }
+
+  /* ── SPINNER ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+  }
+
+  /* ── MAIN AREA ── */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    background: var(--surface);
+  }
+  .tab {
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent-light); border-bottom-color: var(--accent); }
+  .tab-count {
+    font-size: 11px;
+    background: var(--accent-glow);
+    color: var(--accent-light);
+    padding: 1px 7px;
+    border-radius: 10px;
+    min-width: 22px;
+    text-align: center;
+  }
+
+  /* ── CONTENT PANELS ── */
+  .panel { display: none; flex: 1; overflow: hidden; }
+  .panel.active { display: flex; flex-direction: column; }
+
+  /* ── WELCOME SCREEN ── */
+  .welcome {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+  }
+  .welcome-icon { font-size: 64px; margin-bottom: 20px; }
+  .welcome h2 { font-size: 22px; color: var(--text); margin-bottom: 10px; }
+  .welcome p { font-size: 14px; line-height: 1.7; max-width: 420px; }
+  .steps {
+    display: flex;
+    gap: 12px;
+    margin-top: 30px;
+    text-align: left;
+  }
+  .step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    flex: 1;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    background: var(--accent-glow);
+    color: var(--accent-light);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .step h4 { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+  .step p { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+  /* ── LOG PANEL ── */
+  .log-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .log-line { display: flex; gap: 10px; padding: 2px 0; }
+  .log-time { color: var(--text-dim); min-width: 60px; }
+  .log-msg { color: var(--text-muted); }
+  .log-msg.info { color: var(--text-muted); }
+  .log-msg.success { color: var(--green); }
+  .log-msg.lead { color: #a78bfa; }
+  .log-msg.warn { color: var(--yellow); }
+  .log-msg.error { color: var(--red); }
+  .log-msg.section { color: var(--accent-light); font-weight: bold; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    padding: 12px 20px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width .3s;
+    width: 0%;
+  }
+
+  /* ── LEADS TABLE ── */
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-input {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .filter-select {
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .btn-export {
+    padding: 8px 16px;
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .btn-export:hover { background: rgba(34,197,94,.25); }
+  .btn-clear {
+    padding: 8px 14px;
+    background: transparent;
+    color: var(--red);
+    border: 1px solid rgba(239,68,68,.4);
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-clear:hover { background: rgba(239,68,68,.1); }
+
+  .table-wrap {
+    flex: 1;
+    overflow: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead {
+    position: sticky;
+    top: 0;
+    background: var(--surface2);
+    z-index: 10;
+  }
+  th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  th:hover { color: var(--text-muted); }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(46,50,80,.5);
+    color: var(--text-muted);
+    vertical-align: middle;
+  }
+  tr:hover td { background: var(--surface2); }
+  .td-name { color: var(--text); font-weight: 600; max-width: 200px; }
+  .td-name small { display: block; color: var(--text-dim); font-weight: 400; font-size: 11px; margin-top: 1px; }
+
+  .stars {
+    color: var(--yellow);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .stars span { color: var(--text-dim); }
+
+  .nicho-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--accent-glow);
+    color: var(--accent-light);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .status-novo { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  .status-enviado { background: rgba(91,110,245,.15); color: var(--accent-light); border: 1px solid var(--accent); }
+  .status-respondeu { background: rgba(245,158,11,.15); color: var(--yellow); border: 1px solid var(--yellow); }
+  .status-proposta { background: rgba(167,139,250,.15); color: #a78bfa; border: 1px solid #a78bfa; }
+  .status-fechado { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+
+  .btn-wa {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(34,197,94,.1);
+    color: var(--green);
+    border: 1px solid rgba(34,197,94,.3);
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .btn-wa:hover { background: rgba(34,197,94,.2); }
+
+  .empty-table {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-dim);
+  }
+  .empty-table .icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* ── HIDDEN MAP ── */
+  #map { width: 1px; height: 1px; opacity: 0; position: fixed; bottom: 0; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all .3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.green { border-color: var(--green); color: var(--green); }
+  .toast.red { border-color: var(--red); color: var(--red); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<!-- Hidden map element for Google Maps Places -->
+<div id="map"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎯</div>
+    ProspectaSite
+    <span class="badge">Beta</span>
+  </div>
+  <div class="header-stats">
+    <span>Leads encontrados: <span class="stat-val" id="stat-total">0</span></span>
+    <span>Nesta sessão: <span class="stat-val" id="stat-session">0</span></span>
+  </div>
+</header>
+
+<!-- App -->
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside>
+
+    <!-- API Key -->
+    <div class="sidebar-section">
+      <h3>🔑 Configuração</h3>
+      <label>Chave da API do Google Maps</label>
+      <div class="api-key-wrap">
+        <input type="password" id="api-key" placeholder="AIzaSy..." autocomplete="off">
+        <button class="eye-btn" onclick="toggleKey()" title="Mostrar/ocultar">👁</button>
+      </div>
+      <p class="api-help">
+        Obtenha sua chave gratuita em <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a><br>
+        Ative: <strong>Maps JavaScript API</strong> + <strong>Places API</strong>
+      </p>
+    </div>
+
+    <!-- Location -->
+    <div class="sidebar-section">
+      <h3>📍 Localização</h3>
+      <label>Cidade / Região</label>
+      <input type="text" id="city" placeholder="Ex: Campinas, SP" value="">
+
+      <label>Raio de busca: <span id="radius-label">5 km</span></label>
+      <input type="range" id="radius" min="1" max="30" value="5" oninput="updateRadius()">
+      <div class="range-labels"><span>1 km</span><span>30 km</span></div>
+    </div>
+
+    <!-- Nichos -->
+    <div class="sidebar-section">
+      <h3>🏪 Nichos</h3>
+      <button class="select-all-btn" onclick="toggleAll()">Selecionar todos</button>
+      <div class="nicho-grid" id="nicho-grid"></div>
+    </div>
+
+    <!-- Limite -->
+    <div class="sidebar-section">
+      <h3>⚙️ Avançado</h3>
+      <label>Máx. leads por nicho</label>
+      <select id="max-leads">
+        <option value="20">20 leads</option>
+        <option value="40" selected>40 leads</option>
+        <option value="60">60 leads</option>
+        <option value="100">100 leads</option>
+      </select>
+    </div>
+
+    <!-- Botões -->
+    <div class="sidebar-section" style="border-bottom:none;">
+      <button class="btn-search" id="btn-search" onclick="startSearch()">
+        <span class="spinner" id="spinner"></span>
+        <span id="btn-text">🔍 Iniciar Busca</span>
+      </button>
+      <button class="btn-stop" id="btn-stop" onclick="stopSearch()">
+        ⏹ Parar Busca
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- Main -->
+  <main>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" id="tab-welcome" onclick="switchTab('welcome')">🏠 Início</div>
+      <div class="tab" id="tab-log" onclick="switchTab('log')">📡 Log em tempo real</div>
+      <div class="tab" id="tab-leads" onclick="switchTab('leads')">
+        📋 Leads <span class="tab-count" id="leads-count">0</span>
+      </div>
+    </div>
+
+    <!-- Welcome Panel -->
+    <div class="panel active" id="panel-welcome">
+      <div class="welcome">
+        <div class="welcome-icon">🎯</div>
+        <h2>Encontre clientes que precisam de site</h2>
+        <p>O ProspectaSite varre o Google Maps em busca de negócios sem site e entrega uma lista pronta para você abordar via WhatsApp ou email.</p>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <h4>Cole sua API Key</h4>
+            <p>Chave gratuita do Google Maps — $200/mês de crédito grátis.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <h4>Escolha cidade e nichos</h4>
+            <p>Selecione os segmentos com que você tem experiência e portfólio.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <h4>Exporte e aborde</h4>
+            <p>Lista com nome, telefone e endereço. Clique em WhatsApp para abrir direto.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log Panel -->
+    <div class="panel" id="panel-log">
+      <div class="log-container" id="log-container">
+        <div class="log-line">
+          <span class="log-time">--:--:--</span>
+          <span class="log-msg info">Aguardando início da busca...</span>
+        </div>
+      </div>
+      <div class="progress-wrap" id="progress-wrap" style="display:none;">
+        <div class="progress-header">
+          <span id="progress-label">Buscando...</span>
+          <span id="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leads Panel -->
+    <div class="panel" id="panel-leads">
+      <div class="table-toolbar">
+        <input class="search-input" type="text" id="table-search" placeholder="🔍  Buscar por nome, nicho ou telefone..." oninput="filterTable()">
+        <select class="filter-select" id="filter-nicho" onchange="filterTable()">
+          <option value="">Todos os nichos</option>
+        </select>
+        <select class="filter-select" id="filter-status" onchange="filterTable()">
+          <option value="">Todos os status</option>
+          <option value="Novo">Novo</option>
+          <option value="Enviado">Enviado</option>
+          <option value="Respondeu">Respondeu</option>
+          <option value="Proposta">Proposta</option>
+          <option value="Fechado">Fechado</option>
+        </select>
+        <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+        <button class="btn-clear" onclick="clearLeads()">🗑</button>
+      </div>
+      <div class="table-wrap">
+        <div class="empty-table" id="empty-state">
+          <div class="icon">📋</div>
+          <div>Nenhum lead ainda.<br>Configure e inicie a busca.</div>
+        </div>
+        <table id="leads-table" style="display:none;">
+          <thead>
+            <tr>
+              <th onclick="sortTable('name')">#  Nome</th>
+              <th onclick="sortTable('nicho')">Nicho</th>
+              <th onclick="sortTable('phone')">Telefone</th>
+              <th onclick="sortTable('address')">Endereço</th>
+              <th onclick="sortTable('rating')">⭐ Avaliação</th>
+              <th>Status</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="leads-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+const NICHOS = [
+  { type: 'dentist',            label: 'Dentistas',       icon: '🦷' },
+  { type: 'doctor',             label: 'Médicos',         icon: '🏥' },
+  { type: 'lawyer',             label: 'Advogados',       icon: '⚖️' },
+  { type: 'beauty_salon',       label: 'Salões',          icon: '💇' },
+  { type: 'hair_care',          label: 'Barbearias',      icon: '✂️' },
+  { type: 'gym',                label: 'Academias',       icon: '💪' },
+  { type: 'restaurant',         label: 'Restaurantes',    icon: '🍽' },
+  { type: 'pet_store',          label: 'Pet Shops',       icon: '🐾' },
+  { type: 'car_repair',         label: 'Oficinas',        icon: '🔧' },
+  { type: 'accounting',         label: 'Contabilidade',   icon: '📊' },
+  { type: 'electrician',        label: 'Eletricistas',    icon: '⚡' },
+  { type: 'plumber',            label: 'Encanadores',     icon: '🔩' },
+  { type: 'real_estate_agency', label: 'Imobiliárias',    icon: '🏡' },
+  { type: 'clothing_store',     label: 'Lojas de Roupa',  icon: '👗' },
+  { type: 'pharmacy',           label: 'Farmácias',       icon: '💊' },
+  { type: 'bakery',             label: 'Padarias',        icon: '🥖' },
+  { type: 'florist',            label: 'Floriculturas',   icon: '💐' },
+  { type: 'physiotherapist',    label: 'Fisioterapia',    icon: '🩺' },
+];
+
+let allLeads = JSON.parse(localStorage.getItem('prospector_leads') || '[]');
+let mapsService = null;
+let mapsGeocoder = null;
+let searching = false;
+let stopRequested = false;
+let sessionCount = 0;
+let sortCol = 'name';
+let sortAsc = true;
+let filterQuery = '';
+let filterNicho = '';
+let filterStatus = '';
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+function init() {
+  renderNichos();
+  renderTable();
+  updateStats();
+  // Restore API key from session
+  const saved = sessionStorage.getItem('gmaps_key');
+  if (saved) document.getElementById('api-key').value = saved;
+}
+
+function renderNichos() {
+  const grid = document.getElementById('nicho-grid');
+  grid.innerHTML = NICHOS.map((n, i) => `
+    <div class="nicho-item active" id="nicho-${i}" onclick="toggleNicho(${i})">
+      <input type="checkbox" checked>
+      <span class="nicho-icon">${n.icon}</span>
+      <span>${n.label}</span>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+// UI HELPERS
+// ─────────────────────────────────────────────
+function switchTab(tab) {
+  ['welcome','log','leads'].forEach(t => {
+    document.getElementById(`panel-${t}`).classList.remove('active');
+    document.getElementById(`tab-${t}`).classList.remove('active');
+  });
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+function toggleNicho(i) {
+  const el = document.getElementById(`nicho-${i}`);
+  el.classList.toggle('active');
+  el.querySelector('input').checked = el.classList.contains('active');
+}
+
+function toggleAll() {
+  const items = document.querySelectorAll('.nicho-item');
+  const allActive = [...items].every(el => el.classList.contains('active'));
+  items.forEach(el => {
+    if (allActive) { el.classList.remove('active'); el.querySelector('input').checked = false; }
+    else { el.classList.add('active'); el.querySelector('input').checked = true; }
+  });
+}
+
+function updateRadius() {
+  const v = document.getElementById('radius').value;
+  document.getElementById('radius-label').textContent = `${v} km`;
+}
+
+function toggleKey() {
+  const inp = document.getElementById('api-key');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast show ${type}`;
+  setTimeout(() => el.className = 'toast', 3000);
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allLeads.length;
+  document.getElementById('stat-session').textContent = sessionCount;
+  document.getElementById('leads-count').textContent = allLeads.length;
+}
+
+function log(msg, type='info') {
+  const c = document.getElementById('log-container');
+  const now = new Date();
+  const time = now.toTimeString().slice(0,8);
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${time}</span><span class="log-msg ${type}">${msg}</span>`;
+  c.appendChild(line);
+  c.scrollTop = c.scrollHeight;
+}
+
+function setProgress(current, total, label) {
+  const wrap = document.getElementById('progress-wrap');
+  wrap.style.display = 'block';
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-label').textContent = label;
+}
+
+// ─────────────────────────────────────────────
+// MAPS LOADER
+// ─────────────────────────────────────────────
+function loadMapsAPI(apiKey) {
+  return new Promise((resolve, reject) => {
+    if (window.google && window.google.maps) { resolve(); return; }
+    window._mapsReady = resolve;
+    const s = document.createElement('script');
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=_mapsReady`;
+    s.onerror = () => reject(new Error('Falha ao carregar a API. Verifique sua chave.'));
+    document.head.appendChild(s);
+  });
+}
+
+function initServices() {
+  const mapEl = document.getElementById('map');
+  const map = new google.maps.Map(mapEl, { center: { lat: -14.2, lng: -51.9 }, zoom: 4 });
+  mapsService = new google.maps.places.PlacesService(map);
+  mapsGeocoder = new google.maps.Geocoder();
+}
+
+// ─────────────────────────────────────────────
+// GEOCODE
+// ─────────────────────────────────────────────
+function geocodeCity(city) {
+  return new Promise((resolve, reject) => {
+    mapsGeocoder.geocode({ address: city }, (results, status) => {
+      if (status === 'OK') resolve(results[0].geometry.location);
+      else reject(new Error(`Cidade "${city}" não encontrada.`));
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// NEARBY SEARCH
+// ─────────────────────────────────────────────
+function nearbySearch(location, radius, type) {
+  return new Promise((resolve) => {
+    const results = [];
+    const maxLeads = parseInt(document.getElementById('max-leads').value);
+
+    function doPage(pagination) {
+      if (stopRequested || results.length >= maxLeads) { resolve(results); return; }
+      if (pagination && pagination.hasNextPage) {
+        setTimeout(() => pagination.nextPage(), 2100);
+      } else {
+        resolve(results);
+      }
+    }
+
+    mapsService.nearbySearch({ location, radius, type }, (res, status, pagination) => {
+      if (status === 'OK' || status === 'ZERO_RESULTS') {
+        if (res) results.push(...res);
+        doPage(pagination);
+      } else {
+        log(`Aviso na busca (${type}): ${status}`, 'warn');
+        resolve(results);
+      }
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// GET DETAILS
+// ─────────────────────────────────────────────
+function getDetails(placeId) {
+  return new Promise((resolve) => {
+    mapsService.getDetails(
+      { placeId, fields: ['name','formatted_phone_number','international_phone_number','website','formatted_address','rating','user_ratings_total','business_status'] },
+      (result, status) => {
+        if (status === 'OK') resolve(result);
+        else resolve(null);
+      }
+    );
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─────────────────────────────────────────────
+// MAIN SEARCH
+// ─────────────────────────────────────────────
+async function startSearch() {
+  const apiKey = document.getElementById('api-key').value.trim();
+  const city = document.getElementById('city').value.trim();
+  const radius = parseInt(document.getElementById('radius').value) * 1000;
+  const selectedNichos = NICHOS.filter((_, i) => {
+    const el = document.getElementById(`nicho-${i}`);
+    return el && el.classList.contains('active');
+  });
+
+  if (!apiKey) { toast('Cole sua API Key do Google Maps', 'red'); return; }
+  if (!city) { toast('Digite uma cidade', 'red'); return; }
+  if (selectedNichos.length === 0) { toast('Selecione pelo menos um nicho', 'red'); return; }
+
+  // Save key in session
+  sessionStorage.setItem('gmaps_key', apiKey);
+
+  // UI state
+  searching = true;
+  stopRequested = false;
+  document.getElementById('btn-search').disabled = true;
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('btn-text').textContent = 'Buscando...';
+  document.getElementById('btn-stop').style.display = 'flex';
+
+  switchTab('log');
+
+  log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'section');
+  log(`Iniciando busca: ${city} | Raio: ${radius/1000}km | ${selectedNichos.length} nichos`, 'section');
+  log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'section');
+
+  try {
+    // Load Maps API
+    log('Carregando Google Maps API...', 'info');
+    await loadMapsAPI(apiKey);
+    initServices();
+    log('API carregada com sucesso ✓', 'success');
+
+    // Geocode city
+    log(`Localizando: ${city}...`, 'info');
+    const location = await geocodeCity(city);
+    log(`Coordenadas: ${location.lat().toFixed(4)}, ${location.lng().toFixed(4)} ✓`, 'success');
+
+    let nichosProcessed = 0;
+    let leadsAdded = 0;
+
+    for (const nicho of selectedNichos) {
+      if (stopRequested) break;
+
+      nichosProcessed++;
+      setProgress(nichosProcessed - 1, selectedNichos.length, `Buscando: ${nicho.label}`);
+      log(`\n▶ Nicho: ${nicho.icon} ${nicho.label}`, 'section');
+
+      const places = await nearbySearch(location, radius, nicho.type);
+      log(`  ${places.length} negócios encontrados — verificando sites...`, 'info');
+
+      let nichoLeads = 0;
+      const maxLeads = parseInt(document.getElementById('max-leads').value);
+
+      for (const place of places) {
+        if (stopRequested || nichoLeads >= maxLeads) break;
+
+        // Check if already in list
+        if (allLeads.find(l => l.placeId === place.place_id)) continue;
+
+        const details = await getDetails(place.place_id);
+        await sleep(150);
+
+        if (!details) continue;
+        if (details.website) continue; // tem site, pula
+        if (details.business_status === 'CLOSED_PERMANENTLY') continue;
+
+        const phone = details.formatted_phone_number || details.international_phone_number || '';
+        const lead = {
+          id: Date.now() + Math.random(),
+          placeId: place.place_id,
+          name: details.name || place.name || '',
+          nicho: nicho.label,
+          nichoIcon: nicho.icon,
+          phone: phone.replace(/\s/g, ''),
+          address: details.formatted_address || '',
+          rating: details.rating || null,
+          ratingCount: details.user_ratings_total || 0,
+          status: 'Novo',
+          addedAt: new Date().toLocaleDateString('pt-BR'),
+        };
+
+        allLeads.push(lead);
+        nichoLeads++;
+        leadsAdded++;
+        sessionCount++;
+
+        log(`  ✅ ${lead.name} | ${lead.phone}`, 'lead');
+        updateStats();
+        saveLeads();
+        renderTable();
+      }
+
+      log(`  → ${nichoLeads} leads sem site encontrados`, 'success');
+      setProgress(nichosProcessed, selectedNichos.length, `Concluído: ${nicho.label}`);
+    }
+
+    log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'section');
+    log(`✅ Busca concluída! ${leadsAdded} novos leads adicionados.`, 'success');
+    log(`📋 Total acumulado: ${allLeads.length} leads`, 'success');
+    log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'section');
+
+    toast(`${leadsAdded} novos leads encontrados! 🎯`, 'green');
+    if (leadsAdded > 0) setTimeout(() => switchTab('leads'), 1500);
+
+  } catch (err) {
+    log(`❌ Erro: ${err.message}`, 'error');
+    toast(err.message, 'red');
+  } finally {
+    searching = false;
+    stopRequested = false;
+    document.getElementById('btn-search').disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('btn-text').textContent = '🔍 Iniciar Busca';
+    document.getElementById('btn-stop').style.display = 'none';
+    document.getElementById('progress-wrap').style.display = 'none';
+  }
+}
+
+function stopSearch() {
+  stopRequested = true;
+  log('⏹ Parando busca...', 'warn');
+  toast('Busca interrompida');
+}
+
+// ─────────────────────────────────────────────
+// TABLE
+// ─────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('leads-tbody');
+  const table = document.getElementById('leads-table');
+  const empty = document.getElementById('empty-state');
+
+  // Update nicho filter
+  const nichoFilter = document.getElementById('filter-nicho');
+  const currentNicho = nichoFilter.value;
+  const nichos = [...new Set(allLeads.map(l => l.nicho))].sort();
+  nichoFilter.innerHTML = '<option value="">Todos os nichos</option>' +
+    nichos.map(n => `<option value="${n}" ${n===currentNicho?'selected':''}>${n}</option>`).join('');
+
+  // Filter
+  const q = filterQuery.toLowerCase();
+  let leads = allLeads.filter(l => {
+    const matchQ = !q || l.name.toLowerCase().includes(q) || l.nicho.toLowerCase().includes(q) || l.phone.includes(q) || l.address.toLowerCase().includes(q);
+    const matchN = !filterNicho || l.nicho === filterNicho;
+    const matchS = !filterStatus || l.status === filterStatus;
+    return matchQ && matchN && matchS;
+  });
+
+  // Sort
+  leads.sort((a, b) => {
+    let va = a[sortCol === 'name' ? 'name' : sortCol === 'nicho' ? 'nicho' : sortCol === 'phone' ? 'phone' : sortCol === 'address' ? 'address' : 'rating'] || '';
+    let vb = b[sortCol === 'name' ? 'name' : sortCol === 'nicho' ? 'nicho' : sortCol === 'phone' ? 'phone' : sortCol === 'address' ? 'address' : 'rating'] || '';
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    return sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+
+  if (leads.length === 0) {
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  tbody.innerHTML = leads.map((l, i) => {
+    const stars = l.rating ? `⭐ ${l.rating} <span>(${l.ratingCount})</span>` : '<span style="color:var(--text-dim)">—</span>';
+    const waPhone = l.phone.replace(/\D/g,'');
+    const waMsg = encodeURIComponent(`Olá! Vi o ${l.name} no Google Maps e percebi que vocês ainda não têm site. Sou especialista em marketing digital e monto sites profissionais a partir de R$297, com entrega em 5 dias. Posso te mostrar o portfólio?`);
+    const waLink = waPhone ? `https://wa.me/55${waPhone}?text=${waMsg}` : '';
+
+    return `
+      <tr>
+        <td class="td-name">
+          ${l.name}
+          <small>${l.addedAt}</small>
+        </td>
+        <td><span class="nicho-tag">${l.nichoIcon} ${l.nicho}</span></td>
+        <td style="font-family:monospace;color:var(--text)">${l.phone || '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td style="max-width:200px;font-size:12px;color:var(--text-muted)">${l.address.replace(/, Brasil$/, '') || '—'}</td>
+        <td><div class="stars">${stars}</div></td>
+        <td>
+          <span class="status-badge status-${l.status.toLowerCase()}" onclick="cycleStatus('${l.id}')">
+            ${l.status}
+          </span>
+        </td>
+        <td>
+          ${waLink ? `<a class="btn-wa" href="${waLink}" target="_blank">💬 WhatsApp</a>` : '<span style="color:var(--text-dim);font-size:12px">Sem telefone</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('leads-count').textContent = allLeads.length;
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  renderTable();
+}
+
+function filterTable() {
+  filterQuery = document.getElementById('table-search').value;
+  filterNicho = document.getElementById('filter-nicho').value;
+  filterStatus = document.getElementById('filter-status').value;
+  renderTable();
+}
+
+const STATUS_CYCLE = ['Novo', 'Enviado', 'Respondeu', 'Proposta', 'Fechado'];
+function cycleStatus(id) {
+  const lead = allLeads.find(l => String(l.id) === String(id));
+  if (!lead) return;
+  const idx = STATUS_CYCLE.indexOf(lead.status);
+  lead.status = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+  saveLeads();
+  renderTable();
+}
+
+// ─────────────────────────────────────────────
+// PERSIST
+// ─────────────────────────────────────────────
+function saveLeads() {
+  try { localStorage.setItem('prospector_leads', JSON.stringify(allLeads)); } catch(e) {}
+}
+
+function clearLeads() {
+  if (!confirm(`Apagar todos os ${allLeads.length} leads? Esta ação não pode ser desfeita.`)) return;
+  allLeads = [];
+  sessionCount = 0;
+  saveLeads();
+  renderTable();
+  updateStats();
+  toast('Leads apagados');
+}
+
+// ─────────────────────────────────────────────
+// EXPORT CSV
+// ─────────────────────────────────────────────
+function exportCSV() {
+  if (allLeads.length === 0) { toast('Nenhum lead para exportar', 'red'); return; }
+  const headers = ['Nome','Nicho','Telefone','Endereço','Avaliação','Nº Avaliações','Status','Data'];
+  const rows = allLeads.map(l => [
+    `"${(l.name||'').replace(/"/g,'""')}"`,
+    `"${l.nicho}"`,
+    `"${l.phone}"`,
+    `"${(l.address||'').replace(/"/g,'""')}"`,
+    l.rating || '',
+    l.ratingCount || 0,
+    `"${l.status}"`,
+    `"${l.addedAt}"`,
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `leads_sem_site_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${allLeads.length} leads exportados ✓`, 'green');
+}
+
+// ─────────────────────────────────────────────
+// START
+// ─────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
