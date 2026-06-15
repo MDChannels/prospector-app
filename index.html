@@ -1066,7 +1066,12 @@ function loadMapsAPI(apiKey) {
 }
 
 function initServices() {
-  const mapEl = document.getElementById('map');
+  let mapEl = document.getElementById('map-hidden') || document.getElementById('map');
+  if (!mapEl) {
+    mapEl = document.createElement('div');
+    mapEl.style.cssText = 'width:1px;height:1px;opacity:0;position:fixed;bottom:0;left:0';
+    document.body.appendChild(mapEl);
+  }
   const map = new google.maps.Map(mapEl, { center: { lat: -14.2, lng: -51.9 }, zoom: 4 });
   mapsService = new google.maps.places.PlacesService(map);
   mapsGeocoder = new google.maps.Geocoder();
