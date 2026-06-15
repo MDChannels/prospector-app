@@ -642,6 +642,17 @@
     font-size: 14px;
     display: none;
   }
+  .btn-geo {
+    width: 100%; margin-top: 8px;
+    padding: 7px 12px;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: 8px; font-size: 12px;
+    cursor: pointer; transition: all .15s; text-align: left;
+  }
+  .btn-geo:hover { color: var(--accent-light); border-color: var(--accent); border-style: solid; }
+  .keyword-hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
 
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -701,13 +712,22 @@
       <h3>📍 Localização</h3>
       <label>Cidade / Região</label>
       <div class="city-wrap">
-        <input type="text" id="city" placeholder="Digite sua cidade..." autocomplete="off">
+        <input type="text" id="city" placeholder="Cidade, bairro ou endereço..." autocomplete="off">
         <span class="city-ok" id="city-ok">✓</span>
       </div>
+      <button class="btn-geo" onclick="useMyLocation()">📍 Usar minha localização</button>
 
       <label>Raio de busca: <span id="radius-label">5 km</span></label>
       <input type="range" id="radius" min="1" max="30" value="5" oninput="updateRadius()">
       <div class="range-labels"><span>1 km</span><span>30 km</span></div>
+    </div>
+
+    <!-- Palavra-chave -->
+    <div class="sidebar-section">
+      <h3>🔍 Busca Livre (opcional)</h3>
+      <label>Tipo de negócio ou palavra-chave</label>
+      <input type="text" id="keyword" placeholder="Ex: pizzaria, tatuagem, veterinário...">
+      <p class="keyword-hint">Se preenchida, busca por esta palavra e ignora os nichos abaixo.</p>
     </div>
 
     <!-- Nichos -->
@@ -1054,7 +1074,6 @@ function initServices() {
   if (!cityAutocomplete) {
     const cityInput = document.getElementById('city');
     cityAutocomplete = new google.maps.places.Autocomplete(cityInput, {
-      types: ['(cities)'],
       componentRestrictions: { country: 'br' },
       fields: ['geometry', 'name', 'formatted_address'],
     });
@@ -1079,6 +1098,32 @@ function initServices() {
 // ─────────────────────────────────────────────
 // GEOCODE
 // ─────────────────────────────────────────────
+function useMyLocation() {
+  if (!navigator.geolocation) { toast('Geolocalização não suportada neste navegador', 'red'); return; }
+  const btn = document.querySelector('.btn-geo');
+  if (btn) btn.textContent = '⌛ Localizando...';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      if (window.google && google.maps) {
+        selectedCityLocation = new google.maps.LatLng(lat, lng);
+      } else {
+        selectedCityLocation = { lat: () => lat, lng: () => lng };
+      }
+      document.getElementById('city').value = 'Minha localização atual';
+      document.getElementById('city-ok').style.display = 'block';
+      if (btn) btn.textContent = '📍 Usar minha localização';
+      toast('Localização obtida ✓', 'green');
+    },
+    () => {
+      if (btn) btn.textContent = '📍 Usar minha localização';
+      toast('Não foi possível obter localização', 'red');
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
 function geocodeCity(city) {
   return new Promise((resolve, reject) => {
     mapsGeocoder.geocode({ address: city }, (results, status) => {
@@ -1120,6 +1165,27 @@ function nearbySearch(location, radius, type) {
 // ─────────────────────────────────────────────
 // GET DETAILS
 // ─────────────────────────────────────────────
+function nearbySearchWithKeyword(location, radius, keyword) {
+  return new Promise((resolve) => {
+    const results = [];
+    const maxLeads = parseInt(document.getElementById('max-leads').value);
+    function doPage(pagination) {
+      if (stopRequested || results.length >= maxLeads) { resolve(results); return; }
+      if (pagination && pagination.hasNextPage) setTimeout(() => pagination.nextPage(), 2100);
+      else resolve(results);
+    }
+    mapsService.nearbySearch({ location, radius, keyword }, (res, status, pagination) => {
+      if (status === 'OK' || status === 'ZERO_RESULTS') {
+        if (res) results.push(...res);
+        doPage(pagination);
+      } else {
+        log('Aviso busca livre (' + keyword + '): ' + status, 'warn');
+        resolve(results);
+      }
+    });
+  });
+}
+
 function getDetails(placeId) {
   return new Promise((resolve) => {
     mapsService.getDetails(
@@ -1149,6 +1215,8 @@ async function startSearch() {
   if (!apiKey) { toast('Cole sua API Key do Google Maps', 'red'); return; }
   if (!city) { toast('Digite uma cidade', 'red'); return; }
   if (selectedNichos.length === 0) { toast('Selecione pelo menos um nicho', 'red'); return; }
+
+  const keyword = document.getElementById('keyword').value.trim();
 
   // Save key in session
   sessionStorage.setItem('gmaps_key', apiKey);
@@ -1184,43 +1252,27 @@ async function startSearch() {
       log(`Coordenadas: ${location.lat().toFixed(4)}, ${location.lng().toFixed(4)} ✓`, 'success');
     }
 
-    let nichosProcessed = 0;
     let leadsAdded = 0;
 
-    for (const nicho of selectedNichos) {
-      if (stopRequested) break;
-
-      nichosProcessed++;
-      setProgress(nichosProcessed - 1, selectedNichos.length, `Buscando: ${nicho.label}`);
-      log(`\n▶ Nicho: ${nicho.icon} ${nicho.label}`, 'section');
-
-      const places = await nearbySearch(location, radius, nicho.type);
-      log(`  ${places.length} negócios encontrados — verificando sites...`, 'info');
-
-      let nichoLeads = 0;
+    async function processPlaces(places, nichoLabel, nichoIcon) {
+      let count = 0;
       const maxLeads = parseInt(document.getElementById('max-leads').value);
-
       for (const place of places) {
-        if (stopRequested || nichoLeads >= maxLeads) break;
-
-        // Check if already in list
+        if (stopRequested || count >= maxLeads) break;
         if (allLeads.find(l => l.placeId === place.place_id)) continue;
-
         const details = await getDetails(place.place_id);
         await sleep(150);
-
         if (!details) continue;
-        if (details.website) continue; // tem site, pula
+        if (details.website) continue;
         if (details.business_status === 'CLOSED_PERMANENTLY') continue;
-
         const phone = details.formatted_phone_number || details.international_phone_number || '';
         const geo = details.geometry && details.geometry.location ? details.geometry.location : (place.geometry && place.geometry.location ? place.geometry.location : null);
         const lead = {
           id: Date.now() + Math.random(),
           placeId: place.place_id,
           name: details.name || place.name || '',
-          nicho: nicho.label,
-          nichoIcon: nicho.icon,
+          nicho: nichoLabel,
+          nichoIcon: nichoIcon,
           phone: phone.replace(/\s/g, ''),
           address: details.formatted_address || '',
           rating: details.rating || null,
@@ -1230,20 +1282,37 @@ async function startSearch() {
           lat: geo ? (typeof geo.lat === 'function' ? geo.lat() : geo.lat) : null,
           lng: geo ? (typeof geo.lng === 'function' ? geo.lng() : geo.lng) : null,
         };
-
         allLeads.push(lead);
-        nichoLeads++;
-        leadsAdded++;
-        sessionCount++;
-
+        count++; leadsAdded++; sessionCount++;
         log(`  ✅ ${lead.name} | ${lead.phone}`, 'lead');
-        updateStats();
-        saveLeads();
-        renderTable();
+        updateStats(); saveLeads(); renderTable();
       }
+      return count;
+    }
 
-      log(`  → ${nichoLeads} leads sem site encontrados`, 'success');
-      setProgress(nichosProcessed, selectedNichos.length, `Concluído: ${nicho.label}`);
+    if (keyword) {
+      // ── BUSCA POR PALAVRA-CHAVE ──
+      log(`\n▶ Busca livre: "${keyword}"`, 'section');
+      setProgress(0, 1, `Buscando: ${keyword}`);
+      const places = await nearbySearchWithKeyword(location, radius, keyword);
+      log(`  ${places.length} negócios encontrados — verificando sites...`, 'info');
+      const kCount = await processPlaces(places, keyword, '🔍');
+      log(`  → ${kCount} leads sem site encontrados`, 'success');
+      setProgress(1, 1, `Concluído: ${keyword}`);
+    } else {
+      // ── BUSCA POR NICHOS ──
+      let nichosProcessed = 0;
+      for (const nicho of selectedNichos) {
+        if (stopRequested) break;
+        nichosProcessed++;
+        setProgress(nichosProcessed - 1, selectedNichos.length, `Buscando: ${nicho.label}`);
+        log(`\n▶ Nicho: ${nicho.icon} ${nicho.label}`, 'section');
+        const places = await nearbySearch(location, radius, nicho.type);
+        log(`  ${places.length} negócios encontrados — verificando sites...`, 'info');
+        const nCount = await processPlaces(places, nicho.label, nicho.icon);
+        log(`  → ${nCount} leads sem site encontrados`, 'success');
+        setProgress(nichosProcessed, selectedNichos.length, `Concluído: ${nicho.label}`);
+      }
     }
 
     log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'section');
